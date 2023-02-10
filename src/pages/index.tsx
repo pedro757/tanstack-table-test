@@ -133,20 +133,28 @@ const columns = [
   columnHelper.accessor("quantity", {
     header: "Cantidad",
   }),
+  columnHelper.display({
+    header: "Actions",
+    cell: ActionButton,
+  }),
 ];
+
+function ActionButton(_row: CellContext<Product, unknown>) {
+  return <button className="bg-white p-4 text-black">Submit</button>;
+}
 
 const defaultColumn: Partial<ColumnDef<Product>> = {
   cell: Cell,
 };
 
-function Cell(info: CellContext<Product, unknown>) {
-  const initialValue = info.getValue();
+function Cell(cell: CellContext<Product, unknown>) {
+  const initialValue = cell.getValue();
   // We need to keep and update the state of the cell normally
   const [value, setValue] = React.useState(initialValue);
 
   // When the input is blurred, we'll call our table meta's updateData function
   const onBlur = () => {
-    info.table.options.meta?.updateData(info.row.index, info.column.id, value);
+    cell.table.options.meta?.updateData(cell.row.index, cell.column.id, value);
   };
 
   // If the initialValue is changed external, sync it up with our state
