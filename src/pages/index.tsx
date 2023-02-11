@@ -8,6 +8,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React from "react";
+import { createPortal } from "react-dom";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -16,9 +17,14 @@ declare module "@tanstack/react-table" {
   }
 }
 
+import { atom, useAtom } from "jotai";
+
+const Modal = atom(false);
+
 export default function Page() {
   const [data, setData] = React.useState(() => makeData(100));
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [showModal, setShowModal] = useAtom(Modal);
 
   const table = useReactTable({
     data,
@@ -52,20 +58,25 @@ export default function Page() {
   });
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <input
-        type="text"
-        value={globalFilter}
-        onChange={(el) => setGlobalFilter(el.target.value)}
-        placeholder="Search"
-        className="bg-white p-4 text-black"
-      />
-      <table className="border">
+    <main
+      id="main"
+      className="flex min-h-screen flex-col items-center justify-center"
+    >
+      <div className="m-8 p-8 shadow-lg bg-slate-50 rounded-lg">
+        <input
+          type="text"
+          value={globalFilter}
+          onChange={(el) => setGlobalFilter(el.target.value)}
+          placeholder="Search"
+          className="p-4 w-full border mb-4 rounded-lg"
+        />
+
+      <table className="rounded-lg border border-separate">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
+            <tr key={headerGroup.id} className="odd:bg-slate-50">
               {headerGroup.headers.map((header) => (
-                <th key={header.id}>
+                <th key={header.id} className="border-r border-b last:border-r-0 p-2">
                   {header.isPlaceholder
                     ? null
                     : flexRender(
@@ -79,9 +90,9 @@ export default function Page() {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
+            <tr key={row.id} className="even:bg-slate-50 hover:even:bg-slate-100 hover:odd:bg-slate-50">
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="p-2">
+                <td key={cell.id} className="border-r border-b last:border-r-0">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
@@ -89,6 +100,31 @@ export default function Page() {
           ))}
         </tbody>
       </table>
+      </div>
+      {typeof window !== "undefined" &&
+        showModal &&
+        createPortal(
+          <div className="fixed left-1/2 top-1/2">
+            <div className="relative -left-1/2 -top-1/2 flex flex-col rounded-lg bg-white p-4">
+              ¿Estas seguro que quieres modificar este Producto?
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="rounded-lg bg-black p-2 text-white"
+                >
+                  Si
+                </button>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="rounded-lg bg-black p-2 text-white"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </main>
   );
 }
@@ -140,7 +176,16 @@ const columns = [
 ];
 
 function ActionButton(_row: CellContext<Product, unknown>) {
-  return <button className="bg-white p-4 text-black">Submit</button>;
+  const [, setShowModal] = useAtom(Modal);
+
+  return (
+    <button
+      onClick={() => setShowModal(true)}
+      className="rounded-lg bg-slate-100 shadow-lg p-2 text-black"
+    >
+      Editar
+    </button>
+  );
 }
 
 const defaultColumn: Partial<ColumnDef<Product>> = {
@@ -167,7 +212,7 @@ function Cell(cell: CellContext<Product, unknown>) {
       value={value as string}
       onChange={(e) => setValue(e.target.value)}
       onBlur={onBlur}
-      className="bg-transparent text-white"
+      className="bg-transparent p-2"
     />
   );
 }
