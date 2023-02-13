@@ -8,7 +8,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React from "react";
-import { createPortal } from "react-dom";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -20,7 +19,13 @@ declare module "@tanstack/react-table" {
 import { atom, useAtom } from "jotai";
 
 const Modal = atom(false);
-const ModalInfo = atom<CellContext<Product, unknown>>({} as CellContext<Product, unknown>);
+const ModalInfo = atom<CellContext<Product, unknown>>({
+  row: {
+    getValue(_columnId:string) {
+      return ""
+    }
+  }
+} as CellContext<Product, unknown>);
 
 export default function Page() {
   const [data, setData] = React.useState(() => makeData(100));
@@ -112,35 +117,28 @@ export default function Page() {
           </tbody>
         </table>
       </div>
-      {typeof window !== "undefined" &&
-        showModal &&
-        createPortal(
-          <div className="fixed left-1/2 top-1/2">
-            <div className="relative -left-1/2 -top-1/2 flex flex-col rounded-lg bg-white p-4">
-              ¿Estas seguro que quieres modificar este Producto?
-
-              <p>Producto: {modalInfo.row.getValue("name")}</p>
-              <p>SKU: {modalInfo.row.getValue("sku")}</p>
-              <p>Cantidad: {modalInfo.row.getValue("quantity")}</p>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="rounded-lg bg-black p-2 text-white"
-                >
-                  Si
-                </button>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="rounded-lg bg-black p-2 text-white"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+      <dialog open={showModal} className="fixed top-1/3">
+        <div className="flex flex-col rounded-lg bg-white p-4">
+          ¿Estas seguro que quieres modificar este Producto?
+          <p>Producto: {modalInfo.row.getValue("name")}</p>
+          <p>SKU: {modalInfo.row.getValue("sku")}</p>
+          <p>Cantidad: {modalInfo.row.getValue("quantity")}</p>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setShowModal(false)}
+              className="rounded-lg bg-black p-2 text-white"
+            >
+              Si
+            </button>
+            <button
+              onClick={() => setShowModal(false)}
+              className="rounded-lg bg-black p-2 text-white"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </dialog>
     </main>
   );
 }
@@ -200,8 +198,8 @@ function ActionButton(row: CellContext<Product, unknown>) {
   return (
     <button
       onClick={() => {
-        setShowModal(true)
-        setModalInfo(row)
+        setShowModal(true);
+        setModalInfo(row);
       }}
       className="rounded-lg bg-slate-100 p-2 text-black shadow-lg"
     >
