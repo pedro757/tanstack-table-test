@@ -20,11 +20,13 @@ declare module "@tanstack/react-table" {
 import { atom, useAtom } from "jotai";
 
 const Modal = atom(false);
+const ModalInfo = atom<CellContext<Product, unknown>>({} as CellContext<Product, unknown>);
 
 export default function Page() {
   const [data, setData] = React.useState(() => makeData(100));
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [showModal, setShowModal] = useAtom(Modal);
+  const [modalInfo] = useAtom(ModalInfo);
 
   const table = useReactTable({
     data,
@@ -62,44 +64,53 @@ export default function Page() {
       id="main"
       className="flex min-h-screen flex-col items-center justify-center"
     >
-      <div className="m-8 p-8 shadow-lg bg-slate-50 rounded-lg">
+      <div className="m-8 rounded-lg bg-slate-50 p-8 shadow-lg">
         <input
           type="text"
           value={globalFilter}
           onChange={(el) => setGlobalFilter(el.target.value)}
           placeholder="Search"
-          className="p-4 w-full border mb-4 rounded-lg"
+          className="mb-4 w-full rounded-lg border p-4"
         />
 
-      <table className="rounded-lg border border-separate">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="odd:bg-slate-50">
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} className="border-r border-b last:border-r-0 p-2">
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="even:bg-slate-50 hover:even:bg-slate-100 hover:odd:bg-slate-50">
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="border-r border-b last:border-r-0">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <table className="border-separate rounded-lg border">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="odd:bg-slate-50">
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="border-r border-b p-2 last:border-r-0"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => (
+              <tr
+                key={row.id}
+                className="even:bg-slate-50 hover:odd:bg-slate-50 hover:even:bg-slate-100"
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <td
+                    key={cell.id}
+                    className="border-r border-b last:border-r-0"
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       {typeof window !== "undefined" &&
         showModal &&
@@ -107,6 +118,11 @@ export default function Page() {
           <div className="fixed left-1/2 top-1/2">
             <div className="relative -left-1/2 -top-1/2 flex flex-col rounded-lg bg-white p-4">
               ¿Estas seguro que quieres modificar este Producto?
+
+              <p>Producto: {modalInfo.row.getValue("name")}</p>
+              <p>SKU: {modalInfo.row.getValue("sku")}</p>
+              <p>Cantidad: {modalInfo.row.getValue("quantity")}</p>
+
               <div className="flex gap-4">
                 <button
                   onClick={() => setShowModal(false)}
@@ -162,9 +178,11 @@ const columnHelper = createColumnHelper<Product>();
 const columns = [
   columnHelper.accessor("name", {
     header: "Nombre del Producto",
+    cell: (info) => info.getValue(),
   }),
   columnHelper.accessor("sku", {
     header: "SKU",
+    cell: (info) => info.getValue(),
   }),
   columnHelper.accessor("quantity", {
     header: "Cantidad",
@@ -175,13 +193,17 @@ const columns = [
   }),
 ];
 
-function ActionButton(_row: CellContext<Product, unknown>) {
+function ActionButton(row: CellContext<Product, unknown>) {
   const [, setShowModal] = useAtom(Modal);
+  const [, setModalInfo] = useAtom(ModalInfo);
 
   return (
     <button
-      onClick={() => setShowModal(true)}
-      className="rounded-lg bg-slate-100 shadow-lg p-2 text-black"
+      onClick={() => {
+        setShowModal(true)
+        setModalInfo(row)
+      }}
+      className="rounded-lg bg-slate-100 p-2 text-black shadow-lg"
     >
       Editar
     </button>
